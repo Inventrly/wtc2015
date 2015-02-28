@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PLTLabs Bluetooth Example</title>
+    </head>
+    <body>
+        <table>
+            <tbody>
+                <tr>
+                    <td colspan="2"><b>Bluetooth Adapter State:</b> <ul id="adapterState"></ul></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><b>Search for Bluetooth Devices:</b> <button id="btnScan">Search</button></td>
+                </tr>
+                <tr>
+                    <td><b>Devices:</b> <select id="deviceList"></select></td>
+                    <td><button id="btnConnect">Connect</button><button id="btnDisconnect">Disconnect</button></td>
+                </tr>
+                <tr>
+                    <td><b>Device Info:</b> <ul id="deviceInfo"></ul></td>
+                    <td><b>Socket Info:</b> <ul id="socketInfo"></ul></td>
+                </tr>
+                <tr>
+                    <td colspan="2">Turn LED <button id="btnOn">On</button><button id="btnOff">Off</button></td>
+                </tr>
+            </tbody>
+        </table>
+      <script src="js/vendor/jquery-1.10.2.min.js"></script>
+      <script src="js/app.js"></script>
+    </body>
+</html>
