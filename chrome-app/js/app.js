@@ -7,9 +7,8 @@
  */
 
 //Device related variables
-var connectedDevice = null;
+var connectedDeviceAddress = null;
 var deviceList = {};
-var connectedDevice = null;
 
 function init(){
 
@@ -28,6 +27,18 @@ function init(){
   $('#btnOff').attr('disabled', true);
   $('#btnOff').click(turnOffLed);
 
+  $('#btnForward').attr('disabled', true);
+  $('#btnForward').click(forward);
+
+  $('#btnStop').attr('disabled', true);
+  $('#btnStop').click(stop);
+
+  $('#btnLeft').attr('disabled', true);
+  $('#btnLeft').click(turnLeft);
+
+  $('#btnRight').attr('disabled', true);
+  $('#btnRight').click(turnRight);
+
    //bluetooth socket callbacks
   chrome.bluetoothSocket.onReceive.addListener(onReceiveHandler);
 
@@ -37,12 +48,6 @@ function init(){
   });
 
 
-  //device callbacks
-
-  //called when a new device is discovered by the adapter
-  //can be used uninstead of chrome.bluetooth.getDevices
-  chrome.bluetooth.onDeviceAdded.addListener(deviceAdded);
-
   //called when the device has changed (e.g. name, connected state, etc)
   chrome.bluetooth.onDeviceChanged.addListener(updateDevice);
 
@@ -51,41 +56,12 @@ function init(){
   chrome.bluetooth.onDeviceRemoved.addListener(removeDevice);
 
 
-  //get the current adapter state
+  //get the adapter state
   chrome.bluetooth.getAdapterState(adapterStateCallback);
+
+  //register for callback on the adapter state changes
   chrome.bluetooth.onAdapterStateChanged.addListener(adapterStateCallback);
 
-  /*
-  chrome.bluetooth.getDevices(function(devices){
-        for(i = 0; i < devices.length; i++){
-	  var device = devices[i];
-	  console.log("device address: " + device.address);
-	  console.log("device name: " + device.name);
-	  console.log("device class: " + device.deviceClass);
-	  console.log("device vendor ID source: " + device.vendorIdSource);
-	  console.log("device vendor ID: " + device.vendorId);
-	  console.log("device product ID: " + device.productId);
-	  console.log("device device ID: " + device.deviceId);
-	  console.log("device type: " + device.type);
-	  console.log("device paired: " + device.paired);
-	  console.log("device connected: " + device.connected);
-	  console.log("device uuids: " + device.uuids);
-        }
-  }); */
-
-
- /*
-  chrome.bluetooth.startDiscovery(function(){
-    setTimeout(function(){
-      //stop discovery after 15 seconds
-      //discovered devices will be sent to the
-      //chrome.bluetooth.onDeviceAdded listener function
-      chrome.bluetooth.stopDiscovery(function(){
-	  console.log("finished device discovery");
-	});
-      }, 15000);
-  });
-  */
 }
 
 
@@ -104,31 +80,25 @@ function adapterStateCallback(adapterState){
   $('#btnDiscover').attr('disabled', !adapterReady);
 }
 
-function deviceAdded(device){
-  //console.log('device added: ' + JSON.stringify(device));
-}
 
 function addDevice(device){
   deviceList[device.address] = device;
 }
 
 function updateDevice(device){
-  //console.log('device updated: ' + JSON.stringify(device));
   deviceList[device.address] = device;
-  //do some device state change logic here...
 }
 
 function removeDevice(device) {
-  //console.log('device removed: ' + JSON.stringify(device));
   delete deviceList[device.address];
 }
+
 
 function renderDeviceList(){
   $('#deviceList').empty();
   for (var address in deviceList) {
     if (deviceList.hasOwnProperty(address)) {
       var device =  deviceList[address];
-      console.log('rendering device: ' + JSON.stringify(device));
       var state = (device.connected && device.paired) ? "Available" : " Not Available";
       $('#deviceList')
 	  .append($("<option></option>")
@@ -139,6 +109,23 @@ function renderDeviceList(){
 }
 
 
+
+function printDevice(device){
+    console.log("Device: ");
+    console.log("\taddress: " + device.address);
+    console.log("\tname: " + device.name);
+    console.log("\tdevice class: " + device.deviceClass);
+    console.log("\tvendor ID source: " + device.vendorIdSource);
+    console.log("\tvendor ID: " + device.vendorId);
+    console.log("\tproduct ID: " + device.productId);
+    console.log("\tdevice ID: " + device.deviceId);
+    console.log("\ttype: " + device.type);
+    console.log("\tpaired: " + device.paired);
+    console.log("\tconnected: " + device.connected);
+    console.log("\tuuids: " + device.uuids);
+}
+
+
 function getDevices(){
   console.log("getting bluetooth devices");
   chrome.bluetooth.getDevices(function(devices){
@@ -146,28 +133,14 @@ function getDevices(){
         //filter on PLT devices that are connected to the host
         for(i = 0; i < devices.length; i++){
 	  addDevice(devices[i]);
+	  printDevice(devices[i]);
         }
 	renderDeviceList();
       });
 }
 
-function discoverDevices(){
-  console.log("discovering devices for 15 seconds");
-  $('#btnScan').attr('disabled', true);
-  $('#btnDiscover').attr('disabled', true);
-  chrome.bluetooth.startDiscovery(function(){
-      setTimeout(function(){
-	$('#btnScan').attr('disabled', false);
-	$('#btnDiscover').attr('disabled', false);
-	  chrome.bluetooth.stopDiscovery(function(){
-	    console.log("finished device discovery");
-	  });
-        }, 15000);
-  });
-}
 
-function printDeviceInfo(address){
-
+function renderDeviceInfo(address){
   var device = deviceList[address];
   if (!device) {
     return;
@@ -186,7 +159,8 @@ function printDeviceInfo(address){
   $("#deviceInfo").append("<li>UUIDs: " + device.uuids + "</li>");
 }
 
-function printSocketInfo(socketInfo){
+function renderSocketInfo(socketInfo){
+  logSocketInfo(socketInfo);
   $("#socketInfo").empty();
   $("#socketInfo").append("<li>SocketId: " + socketInfo.socketId + "</li>");
   $("#socketInfo").append("<li>Persistent: " + socketInfo.persistent + "</li>");
@@ -198,39 +172,41 @@ function printSocketInfo(socketInfo){
   $("#socketInfo").append("<li>UUID: " + socketInfo.uuid + "</li>");
 }
 
-/*  chrome.bluetoothSocket.getInfo(socketId, function(socketInfo){
-      console.log("SocketId: " + socketInfo.socketId);
-      console.log("Persistent: " + socketInfo.persistent);
-      console.log("Name: " + socketInfo.name);
-      console.log("BufferSize: " + socketInfo.bufferSize);
-      console.log("Paused: " + socketInfo.paused);
-      console.log("Connected: " + socketInfo.connected);
-      console.log("Address: " + socketInfo.address);
-      console.log("UUID: " + socketInfo.uuid);
-    });
-*/
+function logSocketInfo(socketInfo){
+  console.log("SocketId: " + socketInfo.socketId);
+  console.log("Persistent: " + socketInfo.persistent);
+  console.log("Name: " + socketInfo.name);
+  console.log("BufferSize: " + socketInfo.bufferSize);
+  console.log("Paused: " + socketInfo.paused);
+  console.log("Connected: " + socketInfo.connected);
+  console.log("Address: " + socketInfo.address);
+  console.log("UUID: " + socketInfo.uuid);
+}
 
 function disconnectDevice(){
-  if (!connectedDevice) {
+  if (!connectedDeviceAddress) {
     return;
   }
 
-  var device = deviceList[connectedDevice];
+  var device = deviceList[connectedDeviceAddress];
   chrome.bluetoothSocket.close(device.socketId, function(){
     console.log("Device connection closed")
     delete deviceList[device.address].socketId;
-    connectedDevice = null;
+    connectedDeviceAddress = null;
     $('#btnOn').attr('disabled', true);
     $('#btnOff').attr('disabled', true);
+    $('#btnForward').attr('disabled', true);
+    $('#btnStop').attr('disabled', true);
+    $('#btnLeft').attr('disabled', true);
+    $('#btnRight').attr('disabled', true);
     $('#btnConnect').attr('disabled', false);
     $('#btnDisconnect').attr('disabled', true);
     $("#socketInfo").empty();
     $("#deviceInfo").empty();
 
   });
-
-
 }
+
 function connectToDevice(){
   var address = $('#deviceList option:selected').val();
   console.log('connectToDevice: connecting to device ' + address);
@@ -241,16 +217,20 @@ function connectToDevice(){
           throw 'connect: connection failed: ' + chrome.runtime.lastError.message;
         }
 	deviceList[address].socketId = socketInfo.socketId;
-	connectedDevice = address;
-	printDeviceInfo(address);
+	connectedDeviceAddress = address;
+	renderDeviceInfo(address);
 	console.log('connectToDevice: Bluetooth socket has been created with Serial Port Profile')
 
 	//enable the send button
 	$('#btnOn').attr('disabled', false);
 	$('#btnOff').attr('disabled', false);
+	$('#btnForward').attr('disabled', false);
+        $('#btnStop').attr('disabled', false);
+	$('#btnLeft').attr('disabled', false);
+        $('#btnRight').attr('disabled', false);
 	$('#btnConnect').attr('disabled', true);
 	$('#btnDisconnect').attr('disabled', false);
-        chrome.bluetoothSocket.getInfo(socketInfo.socketId, printSocketInfo);
+        chrome.bluetoothSocket.getInfo(socketInfo.socketId, renderSocketInfo);
     })
   });
 }
@@ -261,20 +241,41 @@ function onReceiveHandler(socketData){
   for(var i = 0; i < data_view.length; i++){
      console.log('onReceiveHandler: data received = ' + data_view[i]);
   }
-
 }
 
+var LED_OFF = 48;
+var LED_ON = 49;
+var LEFT = 50;
+var RIGHT = 51;
+var FORWARD = 54;
+var STOP = 55;
+
 function turnOnLed(){
-  sendByteToSocket(49); //1 in ASCII
+  sendByteToSocket(LED_ON); //1 in ASCII
 }
 
 function turnOffLed(){
-  sendByteToSocket(48); //0 in ASCII
+  sendByteToSocket(LED_OFF); //0 in ASCII
 }
 
+function turnLeft(){
+  sendByteToSocket(LEFT); //0 in ASCII
+}
+
+function turnRight(){
+  sendByteToSocket(RIGHT); //0 in ASCII
+}
+
+function forward(){
+  sendByteToSocket(FORWARD);
+}
+
+function stop() {
+  sendByteToSocket(STOP)
+}
 
 function sendByteToSocket(value){
-  if (!connectedDevice || !deviceList[connectedDevice].socketId) {
+  if (!connectedDeviceAddress || !deviceList[connectedDeviceAddress].socketId) {
       throw "device and message parameters are required"
   }
   var message = new ArrayBuffer(1);
@@ -282,7 +283,7 @@ function sendByteToSocket(value){
   data_view[0] = value;
 
   //this variable is required to maintain correct scoping when calling the send function
-  chrome.bluetoothSocket.send(deviceList[connectedDevice].socketId, message);
+  chrome.bluetoothSocket.send(deviceList[connectedDeviceAddress].socketId, message);
 }
 
 init();
