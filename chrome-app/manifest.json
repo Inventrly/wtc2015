@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
 	"name" : "PLTLabs Bluetooth API Demo",
-	"description" : "Demonstration of the Google Chrome APP Bluetooth APIs",
+	"description" : "Demonstration of the Google Chrome App Bluetooth APIs",
 	"version" : "1.0",
 	"icons": { "128": "pltlabs.png" },
 	"app": {
@@ -17,15 +17,3 @@
 
 }
 
-//mention custom profiles/uuids here:
-// Permission for chrome.bluetoothSocket:
-// The application is allowed to communicate with devices
-// using the protocols, profiles, or services identified by
-// the UUIDs... using the BluetoothSocket API.
-//uuid 1101 == serial port profile see - 
-/*
-"bluetooth":{
-	    "uuids": ["82972387-294e-4d62-97b5-2668aa35f618"],
-            "socket" : true
-	},
-*/
